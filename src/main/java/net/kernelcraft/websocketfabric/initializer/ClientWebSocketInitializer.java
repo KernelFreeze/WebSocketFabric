@@ -7,19 +7,19 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelException;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
-import io.netty.handler.codec.http.EmptyHttpHeaders;
+import io.netty.handler.codec.http.DefaultHttpHeaders;
 import io.netty.handler.codec.http.HttpClientCodec;
+import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketClientProtocolHandler;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
-import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketClientCompressionHandler;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import net.kernelcraft.websocketfabric.WebSocketClientConnection;
 import net.kernelcraft.websocketfabric.WebSocketConstants;
-import net.kernelcraft.websocketfabric.handler.ClientConnectedEventHandler;
 import net.kernelcraft.websocketfabric.codec.FrameToPacketDecoder;
 import net.kernelcraft.websocketfabric.codec.PacketToFrameEncoder;
+import net.kernelcraft.websocketfabric.handler.ClientConnectedEventHandler;
 import net.minecraft.network.NetworkSide;
 import net.minecraft.network.NetworkState;
 import org.jetbrains.annotations.NotNull;
@@ -38,13 +38,12 @@ public class ClientWebSocketInitializer extends ChannelInitializer<Channel> {
         setTCPNoDelay(channel);
 
         var handshaker = WebSocketClientHandshakerFactory.newHandshaker(uri, WebSocketVersion.V13, "minecraft", false,
-            EmptyHttpHeaders.INSTANCE, 1280000);
+            new DefaultHttpHeaders().add(HttpHeaderNames.USER_AGENT, "MinecraftClient/1.0"), 1280000);
 
         channel.pipeline()
             .addLast(new HttpClientCodec())
             .addLast(new HttpObjectAggregator(WebSocketConstants.MAX_SIZE))
             .addLast(new WebSocketClientProtocolHandler(handshaker))
-            .addLast(WebSocketClientCompressionHandler.INSTANCE)
             .addLast(new ClientConnectedEventHandler(clientConnection))
             .addLast("timeout", new ReadTimeoutHandler(30))
             .addLast("splitter", new ChannelDuplexHandler()) // no-op
