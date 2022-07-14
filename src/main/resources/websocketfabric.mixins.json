@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "net.kernelcraft.websocketfabric.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "MixinClientConnection",
+    "MixinServerNetworkIo",
+    "ServerNetworkIoAccessor"
+  ],
+  "client": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

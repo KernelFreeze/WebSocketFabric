@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "websocketfabric",
+  "version": "${version}",
+  "name": "WebSocketFabric",
+  "description": "WebSocketFabric is a Minecraft mod that adds a WebSocket server and client to the game.",
+  "authors": [
+    "KernelFreeze"
+  ],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "net.kernelcraft.websocketfabric.WebSocketFabric"
+    ]
+  },
+  "mixins": [
+    "websocketfabric.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.14.8",
+    "fabric": "*",
+    "minecraft": "1.19"
+  }
+}
