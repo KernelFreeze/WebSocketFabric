@@ -3,6 +3,7 @@ package net.kernelcraft.websocketfabric.initializer;
 import java.net.URI;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelException;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -13,16 +14,21 @@ import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketClientProtocolHandler;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketClientCompressionHandler;
-import net.kernelcraft.websocketfabric.client.ClientWebsocketHandler;
+import io.netty.handler.timeout.ReadTimeoutHandler;
+import net.kernelcraft.websocketfabric.WebSocketClientConnection;
 import net.kernelcraft.websocketfabric.WebSocketConstants;
-import net.minecraft.network.ClientConnection;
+import net.kernelcraft.websocketfabric.handler.ClientConnectedEventHandler;
+import net.kernelcraft.websocketfabric.codec.FrameToPacketDecoder;
+import net.kernelcraft.websocketfabric.codec.PacketToFrameEncoder;
+import net.minecraft.network.NetworkSide;
+import net.minecraft.network.NetworkState;
 import org.jetbrains.annotations.NotNull;
 
 public class ClientWebSocketInitializer extends ChannelInitializer<Channel> {
-    private final ClientConnection clientConnection;
+    private final WebSocketClientConnection clientConnection;
     private final URI uri;
 
-    public ClientWebSocketInitializer(ClientConnection clientConnection, URI uri) {
+    public ClientWebSocketInitializer(WebSocketClientConnection clientConnection, URI uri) {
         this.clientConnection = clientConnection;
         this.uri = uri;
     }
@@ -39,7 +45,15 @@ public class ClientWebSocketInitializer extends ChannelInitializer<Channel> {
             .addLast(new HttpObjectAggregator(WebSocketConstants.MAX_SIZE))
             .addLast(new WebSocketClientProtocolHandler(handshaker))
             .addLast(WebSocketClientCompressionHandler.INSTANCE)
-            .addLast(new ClientWebsocketHandler(clientConnection));
+            .addLast(new ClientConnectedEventHandler(clientConnection))
+            .addLast("timeout", new ReadTimeoutHandler(30))
+            .addLast("splitter", new ChannelDuplexHandler()) // no-op
+            .addLast("decoder", new FrameToPacketDecoder(NetworkSide.CLIENTBOUND))
+            .addLast("prepender", new ChannelDuplexHandler()) // no-op
+            .addLast("encoder", new PacketToFrameEncoder(NetworkSide.SERVERBOUND))
+            .addLast("packet_handler", clientConnection);
+
+        clientConnection.addConnectedListener(() -> clientConnection.setState(NetworkState.HANDSHAKING));
     }
 
     private static void setTCPNoDelay(Channel channel) {

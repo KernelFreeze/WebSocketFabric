@@ -12,6 +12,7 @@ import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import net.kernelcraft.websocketfabric.WebSocketClientConnection;
 import net.kernelcraft.websocketfabric.initializer.ClientWebSocketInitializer;
 import net.kernelcraft.websocketfabric.WebSocketConstants;
 import net.minecraft.network.ClientConnection;
@@ -42,7 +43,7 @@ public class MixinClientConnection {
         Lazy<? extends EventLoopGroup> lazy;
         Class<? extends SocketChannel> socketChannel;
 
-        var clientConnection = new ClientConnection(NetworkSide.CLIENTBOUND);
+        var clientConnection = new WebSocketClientConnection(NetworkSide.CLIENTBOUND);
         if (Epoll.isAvailable() && useEpoll) {
             socketChannel = EpollSocketChannel.class;
             lazy = EPOLL_CLIENT_IO_GROUP;

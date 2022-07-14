@@ -47,11 +47,15 @@ public class PacketToFrameEncoder extends MessageToMessageEncoder<Packet<?>> {
             var packetSize = packetByteBuf.writerIndex() - writerIndex;
             if (packetSize > WebSocketConstants.MAX_SIZE) {
                 throw new IllegalArgumentException(
-                    "Packet too big (is %d, should be less than %d): %s".formatted(packetSize, WebSocketConstants.MAX_SIZE, packet));
+                    "Packet too big (is %d, should be less than %d): %s".formatted(packetSize,
+                        WebSocketConstants.MAX_SIZE, packet));
             }
 
             var protocolId = ctx.channel().attr(ClientConnection.PROTOCOL_ATTRIBUTE_KEY).get().getId();
             FlightProfiler.INSTANCE.onPacketSent(protocolId, packetId, ctx.channel().remoteAddress(), packetSize);
+
+            LOGGER.debug(ClientConnection.PACKET_SENT_MARKER, "OUT: [{}:{}] {}", protocolId, packetId,
+                packet.getClass().getName());
         } catch (Throwable throwable) {
             LOGGER.error("Error encoding packet {}", packetId, throwable);
             if (packet.isWritingErrorSkippable()) {

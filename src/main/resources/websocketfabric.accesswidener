@@ -1,0 +1,6 @@
+accessWidener	v1 named
+
+extendable method net/minecraft/network/ClientConnection sendQueuedPackets ()V
+accessible field net/minecraft/network/ClientConnection packetQueue Ljava/util/Queue;
+accessible class net/minecraft/network/ClientConnection$QueuedPacket
+accessible method net/minecraft/network/ClientConnection sendImmediately (Lnet/minecraft/network/Packet;Lio/netty/util/concurrent/GenericFutureListener;)V

@@ -46,5 +46,8 @@ public class FrameToPacketDecoder extends MessageToMessageDecoder<WebSocketFrame
                         .getSimpleName(), packetByteBuf.readableBytes(), packetId));
         }
         out.add(packet);
+
+        LOGGER.debug(ClientConnection.PACKET_RECEIVED_MARKER, " IN: [{}:{}] {}",
+            ctx.channel().attr(ClientConnection.PROTOCOL_ATTRIBUTE_KEY).get(), packetId, packet.getClass().getName());
     }
 }
