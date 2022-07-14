@@ -14,6 +14,7 @@ import net.kernelcraft.websocketfabric.initializer.listener.ConnectedListener;
 import net.kernelcraft.websocketfabric.mixin.ClientConnectionAccessor;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.network.NetworkSide;
+import net.minecraft.network.NetworkState;
 import net.minecraft.network.Packet;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.Nullable;
@@ -47,7 +48,7 @@ public class WebSocketClientConnection extends ClientConnection {
     @Override
     public void disconnect(Text disconnectReason) {
         var accessor = (ClientConnectionAccessor) this;
-        var channel = accessor.getChannel();
+        var channel = getChannel();
 
         if (channel.isOpen()) {
             channel
@@ -69,12 +70,69 @@ public class WebSocketClientConnection extends ClientConnection {
 
     @Override
     public void send(Packet<?> packet, @Nullable GenericFutureListener<? extends Future<? super Void>> callback) {
-        if (this.isOpen() && this.connected) {
-            this.sendQueuedPackets();
-            this.sendImmediately(packet, callback);
+        this.packetQueue.add(new QueuedPacket(packet, callback));
+        this.sendQueuedPackets();
+    }
+
+    private NetworkState getState() {
+        return getChannel().attr(PROTOCOL_ATTRIBUTE_KEY).get();
+    }
+
+    private Channel getChannel() {
+        var accessor = (ClientConnectionAccessor) this;
+        return accessor.getChannel();
+    }
+
+    @Override
+    protected void sendImmediately(Packet<?> packet,
+        @Nullable GenericFutureListener<? extends Future<? super Void>> callback) {
+        var packetState = NetworkState.getPacketHandlerState(packet);
+        var protocolState = this.getState();
+
+        var newState = packetState != protocolState;
+
+        if (getChannel().eventLoop().inEventLoop()) {
+            if (newState) {
+                this.setState(packetState);
+            }
+            doSendPacket(packet, callback);
         } else {
-            this.packetQueue.add(new QueuedPacket(packet, callback));
+            // Note: In newer versions of Netty, we could use AbstractEventExecutor.LazyRunnable to avoid a wakeup.
+            // This has the advantage of requiring slightly less code.
+            // However, in practice, (almost) every write will use a WriteTask which doesn't wake up the event loop.
+            // The only exceptions are transitioning states (very rare) and when a listener is provided (but this is
+            // only upon disconnect of a client). So we can sit back and enjoy the GC savings.
+            if (!newState && callback == null) {
+                var voidPromise = getChannel().voidPromise();
+
+                getChannel().writeAndFlush(packet, voidPromise);
+            } else {
+                // Fallback.
+                if (newState) {
+                    getChannel().config().setAutoRead(false);
+                }
+
+                getChannel().eventLoop().execute(() -> {
+                    if (newState) {
+                        this.setState(packetState);
+                    }
+                    doSendPacket(packet, callback);
+                });
+            }
         }
+    }
+
+    private void doSendPacket(Packet<?> packet,
+        @Nullable GenericFutureListener<? extends Future<? super Void>> callback) {
+        if (callback == null) {
+            getChannel().write(packet, getChannel().voidPromise());
+        } else {
+            var channelFuture = getChannel().write(packet);
+            channelFuture.addListener(callback);
+            channelFuture.addListener(ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE);
+        }
+
+        getChannel().flush();
     }
 
     @Override

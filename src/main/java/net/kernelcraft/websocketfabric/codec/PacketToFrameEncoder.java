@@ -53,9 +53,6 @@ public class PacketToFrameEncoder extends MessageToMessageEncoder<Packet<?>> {
 
             var protocolId = ctx.channel().attr(ClientConnection.PROTOCOL_ATTRIBUTE_KEY).get().getId();
             FlightProfiler.INSTANCE.onPacketSent(protocolId, packetId, ctx.channel().remoteAddress(), packetSize);
-
-            LOGGER.debug(ClientConnection.PACKET_SENT_MARKER, "OUT: [{}:{}] {}", protocolId, packetId,
-                packet.getClass().getName());
         } catch (Throwable throwable) {
             LOGGER.error("Error encoding packet {}", packetId, throwable);
             if (packet.isWritingErrorSkippable()) {

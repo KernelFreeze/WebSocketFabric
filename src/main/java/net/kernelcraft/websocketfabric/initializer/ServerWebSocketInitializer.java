@@ -50,7 +50,7 @@ public class ServerWebSocketInitializer extends ChannelInitializer<Channel> {
             .addLast(new WebSocketServerProtocolHandler(WebSocketConstants.WEBSOCKET_PATH, "minecraft", true))
             .addLast(new WebSocketPageHandler())
             .addLast(new ConnectedEventHandler(clientConnection))
-            .addLast("timeout", new ReadTimeoutHandler(30))
+            .addLast("timeout", new ReadTimeoutHandler(120))
             .addLast("splitter", new ChannelDuplexHandler()) // no-op
             .addLast("decoder", new FrameToPacketDecoder(NetworkSide.SERVERBOUND))
             .addLast("prepender", new ChannelDuplexHandler())
