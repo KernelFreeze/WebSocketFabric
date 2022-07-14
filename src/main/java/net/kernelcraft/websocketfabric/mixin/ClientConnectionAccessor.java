@@ -4,6 +4,8 @@ import java.net.SocketAddress;
 
 import io.netty.channel.Channel;
 import net.minecraft.network.ClientConnection;
+import net.minecraft.text.Text;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
@@ -20,4 +22,7 @@ public interface ClientConnectionAccessor {
 
     @Accessor
     SocketAddress getAddress();
+
+    @Accessor
+    void setDisconnectReason(@Nullable Text disconnectReason);
 }
