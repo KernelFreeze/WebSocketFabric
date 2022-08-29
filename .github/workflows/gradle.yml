@@ -1,0 +1,41 @@
+name: Build Gradle project
+
+on:
+  push:
+
+jobs:
+  build-gradle-project:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - name: Checkout project sources
+      uses: actions/checkout@v3
+    - uses: dev-drprasad/delete-tag-and-release@v0.2.0
+      with:
+        delete_release: true
+        tag_name: "Latest"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Setup Java 17 JDK
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+    - name: Setup Gradle
+      uses: gradle/gradle-build-action@v2
+    - name: Modify Gradlew permissions
+      run:  chmod +x ./gradlew
+    - name: Build Gradlew project
+      run: ./gradlew build
+    - name: Artifact upload
+      uses: actions/upload-artifact@v3
+      with:
+        name: JARs
+        path: build/libs
+
+    - uses: ncipollo/release-action@v1
+      with:
+        artifacts: "./build/libs/*.jar"
+        tag: "Latest"
+        token: ${{ secrets.GITHUB_TOKEN }}
