@@ -27,7 +27,7 @@ jobs:
     - name: Modify Gradlew permissions
       run:  chmod +x ./gradlew
     - name: Build Gradlew project
-      run: ./gradlew build
+      run: ./gradlew remapJar
     - name: Artifact upload
       uses: actions/upload-artifact@v3
       with:
